@@ -1,0 +1,5 @@
+---
+  username: "MYUSERNAMEHERE"
+  ssh_auth: "{{ lookup('file','PWD_TO_MY_SSH') }}"
+  docker_compose_version: 1.29.2
+
