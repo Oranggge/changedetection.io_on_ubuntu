@@ -1,0 +1,102 @@
+---
+- name: Setting up a new ubuntu server.
+  hosts: all
+  become: true
+
+  vars_files:
+    - vars/ubuntu_vars.yml
+    - vars/encrypted_vars.yml
+         
+
+  tasks:
+    - name: Create a new user and set a password and add it to sudo group.
+      user:
+        name: "{{ username }}"
+        password: "{{ username_password_hash }}"
+        shell: "/bin/bash"
+        append: yes
+        groups: sudo
+
+    - name: Add an SSH authorized key.
+      authorized_key:
+        user: "{{ username }}"
+        key: "{{ ssh_auth }}" 
+        comment: "my main ssh key"
+
+    - name: Update apt cache if needed.
+      apt:
+         update_cache: true
+         cache_valid_time: 3600
+
+# Here we start to install programs
+#
+    - name: Install docker dependencies for HTTPS.
+      apt:
+        name: 
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+
+    - name: Add Docker's official GPG key.
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+
+    - name: Add stable Repository of docker.
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Update apt cache and Install Docker Engine.
+      apt:
+        update_cache: true
+        name:
+          - docker-ce
+          - docker-ce-cli 
+          - containerd.io
+          - pip
+
+    - name: Install Docker SDK for Python, needed for ansible.
+      pip:
+        name:
+          - docker
+          - docker-compose
+
+    - name: Install Docker Compose.
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64"
+        dest: "/usr/local/bin/docker-compose"
+
+    - name: Apply executable permissions to the binary
+      file:
+        path: "/usr/local/bin/docker-compose"
+        mode: "u=x,g=x,o=x,a=rx"
+
+# Install changedetection.io github repo
+#
+    - name: Download Github repo of changedetection.io.
+      git:
+        repo: 'https://github.com/dgtlmoon/changedetection.io.git'
+        dest: "/home/{{ username }}/Github/changedetection.io"
+
+# TODO: why Github folder doesn't change the owner, and why always result - changed?
+    - name: Change permission on Github files.
+      file:
+        dest: "/home/{{ username }}/Github/changedetection.io"
+        state: directory
+        recurse: yes
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Running Docker-compose up.
+      docker_compose:
+        project_src: "/home/{{ username }}/Github/changedetection.io"
+        state: present
+
+#    - name: Start Docker Container with changedetection.
+#      docker_container:
+#        name: changedetection
+#        image: dgtlmoon/changedetection.io
+#        restart: yes
+#        ports:
+#          - "127.0.0.1:5000:5000"
