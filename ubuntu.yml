@@ -12,7 +12,7 @@
     - name: Create a new user and set a password and add it to sudo group.
       user:
         name: "{{ username }}"
-        password: "{{ username_password_hash }}"
+        password: "{{ username_password_clear_text | password_hash('sha512', 'mysalt') }}"
         shell: "/bin/bash"
         append: yes
         groups: sudo
