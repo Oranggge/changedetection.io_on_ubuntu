@@ -79,10 +79,10 @@
         repo: 'https://github.com/dgtlmoon/changedetection.io.git'
         dest: "/home/{{ username }}/Github/changedetection.io"
 
-# TODO: why Github folder doesn't change the owner, and why always result - changed?
+# TODO: why always result - changed?
     - name: Change permission on Github files.
       file:
-        dest: "/home/{{ username }}/Github/changedetection.io"
+        dest: "/home/{{ username }}/Github"
         state: directory
         recurse: yes
         owner: "{{ username }}"
